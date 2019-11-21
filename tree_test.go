@@ -42,6 +42,38 @@ var paths = []string{
 }
 */
 var paths = []string{
+	"/hi",
+	"/b/",
+	"/ABC/",
+	"/search/:query",
+	"/cmd/:tool/",
+	"/src/*filepath",
+	"/x",
+	"/x/y",
+	"/y/",
+	"/y/z",
+	"/0/:id",
+	"/0/:id/1",
+	"/1/:id/",
+	"/1/:id/2",
+	"/aa",
+	"/a/",
+	"/doc",
+	"/doc/go_faq.html",
+	"/doc/go1.html",
+	"/doc/go/away",
+	"/no/a",
+	"/no/b",
+	"/Π",
+	"/u/apfêl/",
+	"/u/äpfêl/",
+	"/u/öpfêl",
+	"/v/Äpfêl/",
+	"/v/Öpfêl",
+	"/w/♬",  // 3 byte
+	"/w/♭/", // 3 byte, last byte differs
+	"/w/𠜎",  // 4 byte
+	"/w/𠜏/", // 4 byte
 	"/",
 	"/cmd.html",
 	"/code.html",
