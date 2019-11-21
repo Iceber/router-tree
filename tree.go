@@ -14,7 +14,7 @@ type node struct {
 	nType    nodeType
 	handle   Handle
 	children []*node
-	indices  string
+	indices  []byte
 }
 
 type Tree struct {
@@ -40,7 +40,7 @@ func (n *node) bifurcate(i int) {
 		nType:  static,
 		handle: n.handle,
 	}
-	n.indices = string([]byte{child.path[0]})
+	n.indices = []byte{child.path[0]}
 	n.children = []*node{&child}
 	n.path = n.path[:i]
 	n.handle = nil
@@ -81,17 +81,18 @@ func (n *node) addRoute(path string, handle Handle) {
 
 			idxc := path[0]
 			childNode := n.getChildNode(idxc)
-			if childNode == nil {
+			if childNode != nil {
+				n = childNode
 				continue
 			}
 
 			// 创建新的子节点
-			n.indices += string([]byte{idxc})
+			n.indices = append(n.indices, idxc)
 			child := &node{}
 			n.children = append(n.children, child)
 			n.incrementChild(len(n.indices) - 1)
-			n = child
 
+			n = child
 			n.insertChild(path, handle)
 			return
 		}
@@ -107,4 +108,35 @@ func (n *node) addRoute(path string, handle Handle) {
 func (n *node) insertChild(path string, handle Handle) {
 	n.path = path
 	n.handle = handle
+}
+
+func (t *Tree) GetValue(path string) Handle {
+	return t.root.getValue(path)
+}
+
+func (n *node) getValue(path string) (handle Handle) {
+	for {
+		prefix := n.path
+
+		if len(path) <= len(n.path) {
+			if prefix == path {
+				handle = n.handle
+			}
+			return
+		}
+
+		if path[:len(prefix)] == prefix {
+			path = path[len(prefix):]
+
+			idxc := path[0]
+			for i, c := range n.indices {
+				if c == idxc {
+					n = n.children[i]
+					prefix = n.path
+					continue
+				}
+			}
+			return
+		}
+	}
 }
