@@ -8,6 +8,22 @@ type node struct {
 	indices  []byte
 }
 
+// 匹配首字母来获取相应子节点
+func (n *node) getChildNode(idxc byte) *node {
+	for i := 0; i < len(n.indices); i++ {
+		if idxc == n.indices[i] {
+			i = n.incrementChild(i)
+			return n.children[i]
+		}
+	}
+
+	return nil
+}
+
+func (n *node) insertChild(path string, handle Handle) {
+	n.path = path
+	n.handle = handle
+}
 func (*node) incrementChild(i int) int {
 	return i
 }
@@ -23,18 +39,6 @@ func (n *node) bifurcate(i int) {
 	n.children = []*node{&child}
 	n.path = n.path[:i]
 	n.handle = nil
-}
-
-// 匹配首字母来获取相应子节点
-func (n *node) getChildNode(idxc byte) *node {
-	for i := 0; i < len(n.indices); i++ {
-		if idxc == n.indices[i] {
-			i = n.incrementChild(i)
-			return n.children[i]
-		}
-	}
-
-	return nil
 }
 
 func (n *node) addRoute(path string, handle Handle) {
@@ -54,39 +58,34 @@ func (n *node) addRoute(path string, handle Handle) {
 			n.bifurcate(i)
 		}
 
-		// path 长度大于匹配部分
-		if i < len(path) {
-			path = path[i:] // 未匹配部分
-
-			idxc := path[0]
-			childNode := n.getChildNode(idxc)
-			if childNode != nil {
-				n = childNode
-				continue
+		// 全匹配
+		if len(path) == i {
+			if n.handle != nil {
+				panic("a handle is already registered for path '" + fullPath + "'")
 			}
-
-			// 创建新的子节点
-			n.indices = append(n.indices, idxc)
-			child := &node{}
-			n.children = append(n.children, child)
-			n.incrementChild(len(n.indices) - 1)
-
-			n = child
-			n.insertChild(path, handle)
+			n.handle = handle
 			return
 		}
 
-		if n.handle != nil {
-			panic("a handle is already registered for path '" + fullPath + "'")
+		path = path[i:] // 未匹配部分
+
+		idxc := path[0]
+		childNode := n.getChildNode(idxc)
+		if childNode != nil {
+			n = childNode
+			continue
 		}
-		n.handle = handle
+
+		// 创建新的子节点
+		n.indices = append(n.indices, idxc)
+		child := &node{}
+		n.children = append(n.children, child)
+		n.incrementChild(len(n.indices) - 1)
+
+		n = child
+		n.insertChild(path, handle)
 		return
 	}
-}
-
-func (n *node) insertChild(path string, handle Handle) {
-	n.path = path
-	n.handle = handle
 }
 
 func (n *node) getValue(path string) (handle Handle) {
@@ -104,12 +103,11 @@ func (n *node) getValue(path string) (handle Handle) {
 			path = path[len(prefix):]
 
 			idxc := path[0]
-			for i, c := range n.indices {
-				if c == idxc {
-					n = n.children[i]
-					prefix = n.path
-					continue
-				}
+			children := n.getChildNode(idxc)
+			if children != nil {
+				n = children
+				prefix = n.path
+				continue
 			}
 			return
 		}
